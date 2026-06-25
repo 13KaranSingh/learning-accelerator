@@ -1,6 +1,15 @@
 import os
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# load variables from .env
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+print("API Key loaded: ", os.getenv("OPENAI_API_KEY")[:10] + "....")
 
 video_id = "pbsTy5V_pxA"
 
