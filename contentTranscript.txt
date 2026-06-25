@@ -1,1 +1,274 @@
-This file is inside a created directory
+Every senior developer will tell you,
+"Prefer composition over inheritance."
+But nobody explains why.
+So you do what everyone does. You open
+YouTube, watch a few videos, and every
+single one hits you with the same animal
+to dog example that has absolutely
+nothing to do with the code you write
+every day.
+So today, we're doing it differently.
+We're going to build a real system with
+inheritance, watch it completely fall
+apart when one new requirement drops,
+and then rebuild it with composition. So
+you finally get why it matters.
+Before we jump in, a quick shout-out to
+the newest members of the channel. Your
+support genuinely means a lot and helps
+make videos like this possible.
+All right, let's get into it. Both
+composition and inheritance are trying
+to solve the exact same problem, code
+reuse. You've written some logic, it
+works, and now you need that same logic
+in another place. Do you copy-paste it?
+No, you find a way to share it.
+Inheritance and composition are just two
+different strategies for doing that.
+Let's start with inheritance.
+Inheritance is when you have a class
+that already does something useful, and
+you create a child class that extends
+it. Basically saying, "I'm everything
+you are plus a little more."
+Let's say we're building an order
+processing system. We have a base order
+class. This order class handles the core
+stuff. It stores the order ID, the list
+of items, the total. It knows how to
+calculate the total and generate an
+invoice. But how the order actually gets
+delivered depends on the shipping
+method. Ground shipping works
+differently from air shipping, works
+differently from international freight.
+So we make ship and track abstract and
+create subclasses. Standard order ships
+via ground courier and tracks through
+the courier API. Express order books
+next-day air. International order
+handles freight and customs paperwork.
+Each subclass implements its own version
+of ship and track, but they all get
+calculate total and generate invoice for
+free.
+So, when our app creates a standard
+order or an express order, we can call
+calculate total on both of them, and the
+right ship method gets called
+automatically.
+This works great, but then a new
+requirement comes in. We need to support
+digital orders now. Software licenses,
+ebooks, that kind of thing. So, we need
+an order for products that aren't
+physical at all. There's no box to pack,
+no courier to call, no tracking number
+to generate. The customer just gets a
+download link in their email.
+So, we create digital order and extend
+order, and right here things start
+smelling. We're forced to implement
+ship, even though there's nothing to
+physically ship. The best we can do is
+pretend sending a download link is
+shipping, but it's not. It's a
+completely different operation. And
+track? You can't track a download. All
+we can do is throw an exception. We're
+implementing a method just to say don't
+call this.
+Okay, fine. We can fix this. We'll
+restructure. We pull ship and track out
+of the base order class and create a
+middle layer called physical order that
+contains those methods. Then standard
+order, express order, and international
+order extend physical order, while
+digital order extends order directly.
+But now we've broken everyone who is
+referencing the original order class
+expecting it to have a ship method.
+We're forced to refactor across the
+entire code base.
+And this is what makes inheritance
+fragile.
+Every time you put behavior into a
+parent class, you're making a prediction
+about what all future children will have
+in common. When you wrote abstract void
+ship in order, you were predicting that
+every order would need to be shipped.
+That prediction was true for standard,
+express, and international. Then digital
+orders arrived and proved it wrong. The
+moment those assumptions stop being
+true, the hierarchy starts fighting you.
+Now you're restructuring parent classes,
+introducing intermediate layers, and
+refactoring code that was perfectly
+happy before.
+Think of it like this. Inheritance is
+like building a toy by gluing parts
+together. Everything is fused. The
+wheels, the body, the engine, all one
+solid piece. Looks great until you
+realize you need a version without an
+engine. Now you need a hacksaw.
+Change is the enemy of inheritance
+hierarchies. You design what feels like
+the perfect class tree today, and 6
+months later one new requirement blows
+it apart. So, what's the alternative?
+Composition. And here's the thing,
+you've already been doing it.
+Composition isn't some fancy pattern.
+It's just using objects. Instead of
+saying, "I am a thing." you say, "I have
+a thing."
+Let's rebuild our order system with
+composition. First, strip the order
+class down to what it truly is, just
+data. No abstract methods, no
+assumptions about how it gets delivered.
+It just represents an order in memory.
+Now, shipping is a separate concern, so
+we make separate classes for that.
+Ground shipper handles ground courier
+delivery, air shipper books next-day
+air, freight shipper takes care of
+international freight and customs.
+Instead of the shipper being an order,
+it takes an order. The order is passed
+in as a parameter.
+Now, when our digital order requirement
+comes in, easy. We create a digital
+delivery class with a single method,
+deliver. It generates a download link
+and emails it to the customer. No ship
+method, no track method, no exceptions
+to throw, no parent class to
+restructure. We just created a new
+class. Nobody else was affected.
+And now the consumer can mix and match.
+Want to ship a physical product and also
+send a digital license key with the same
+order? Just use both. Call ground
+shipper.ship, then call
+digitaldelivery.deliver.
+Done. Another part of the app could do
+something totally different. Ship via
+air, skip the invoice, whatever. Each
+piece is independent. You compose the
+behavior you need for your specific use
+case.
+Think of it like LEGO. Each brick is its
+own thing. You snap them together
+however you want. Need to change the
+engine on your spaceship? Pop it out,
+click in a new one. Now, inheritance
+isn't just about code reuse. It quietly
+gives you something else. Abstraction.
+The ability for code to use a thing
+without knowing exactly which thing it
+is.
+In our old inheritance-based system, our
+app could store a reference to the
+parent class order, and it didn't matter
+whether it was actually a standard order
+or an express order under the hood.
+The parent class formed a natural
+contract. Every order will have at least
+these methods. So, the service could
+treat all orders the same.
+But with composition, we don't have a
+parent class anymore. Our shippers are
+independent classes.
+So, how do we get that abstraction back?
+This is where interfaces come in.
+An interface is a lightweight contract.
+It doesn't carry any code or variables.
+It just says, "If you implement me, you
+promise to have these methods."
+So, we create an interface called
+delivery method with a single method,
+deliver.
+Now, our ground shipper, air shipper,
+and digital delivery all implement
+delivery method. And our service can
+work with the interface instead of a
+concrete class. Same abstraction without
+the baggage.
+With inheritance, the parent shares
+everything by default. Every field,
+every method. That makes it powerful,
+but also expensive to change.
+Interfaces are the opposite. They define
+only the contract, nothing more. They're
+minimal, lightweight, and you can slap
+them onto any existing class without
+restructuring your world. And now that
+we have this clean interface, we can
+actually lift the creation of the
+delivery method out of our service
+entirely.
+Instead of the service deciding which
+delivery method to use, we just pass it
+in from the outside. The service says,
+"I don't care how you deliver orders.
+Just give me something that can."
+There's actually a name for what we just
+did, dependency injection. You pass in
+the thing you depend on rather than
+creating it yourself.
+That's it. No magic framework, just
+handing in an interface.
+I'll do a full video on dependency
+injection, but if you've heard the term
+and wondered what it was, now you know.
+Now, I'm not going to tell you
+inheritance is evil. Some people will.
+I won't.
+But, I will say I rarely use it in my
+own code.
+Composition isn't perfect, either. You
+end up writing more boilerplate. You
+need to initialize all your
+collaborating objects. Sometimes you
+create wrapper methods that just forward
+a call to an internal object. It can
+feel verbose.
+But, ultimately, composition reduces the
+coupling between your objects.
+Less coupling means less friction when
+things change. And things always change.
+That said, inheritance can still make
+sense in specific cases. If you're
+working inside a framework that expects
+it, like extending activity in Android,
+or creating custom exceptions in Java.
+Or if you have highly repetitive code
+where many classes need the same
+boilerplate and only override one small
+thing.
+But, even then, design the parent class
+to be inherited. Keep most things
+private or final. Don't let child
+classes directly access parent
+variables, the way we avoid making
+variables public.
+Create a clean, explicit API for what's
+meant to be overridden.
+If you leave everything open, some child
+class will reach into the parent's
+internals, and 6 months later, you'll
+change the parent and break things you
+didn't even know existed.
+So, bottom line, when in doubt, compose.
+If you found this helpful, consider
+subscribing. Drop a comment if you've
+ever been burned by a deep inheritance
+chain. I want to hear the horror
+stories.
+See you in the next one.
